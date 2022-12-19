@@ -18,6 +18,7 @@ public class DemoController {
     public String hello(Model model) {
         model.addAttribute("name", "你好！");
         return "hello";
+
     }
 
 }
