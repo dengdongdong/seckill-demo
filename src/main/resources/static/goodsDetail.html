@@ -45,9 +45,17 @@
                 <!--                    <input type="hidden" name="goodsId" id="goodsId">-->
                 <!--                    <button class="btn btn-primary btn-block" type="submit" id="buyButton">立即秒杀</button>-->
                 <!--                </form>-->
-                <button class="btn btn-primary btn-block" type="button" id="buyButton" onclick="getSeckillPath()">立即秒杀
-                    <input type="hidden" name="goodsId" id="goodsId">
-                </button>
+                <div class="row">
+                    <div class="form-inline">
+                        <img id="captchaImg" width="130" height="32" onclick="refreshCaptcha()" style="display: none"/>
+                        <input id="captcha" class="form-control" style="display: none">
+                        <button class="btn btn-primary" type="button" id="buyButton"
+                                onclick="getSeckillPath()">立即秒杀
+                            <input type="hidden" name="goodsId" id="goodsId">
+                        </button>
+                    </div>
+                </div>
+
             </td>
             <!--            <td th:text="${#dates.format(goods.startDate,'yyyy-MM-dd HH:mm:ss')}"></td>-->
             <!--            <td id="seckillTip">-->
@@ -83,6 +91,11 @@
     $(function () {
         getDetails();
     });
+
+    function refreshCaptcha() {
+        $("#captchaImg").attr("src", "/secKill/captcha?goodsId=" + $("#goodsId").val() + "&time=" + new Date());
+
+    }
 
     //获取秒杀路径
     function getSeckillPath() {
@@ -224,11 +237,16 @@
                 clearTimeout(timeout);
             }
             $("#buyButton").attr("disabled", false);
+            $("#captchaImg").attr("src", "/secKill/captcha?goodsId=" + $("#goodsId").val() + "&time=" + new Date());
+            $("#captchaImg").show();
+            $("#captcha").show();
             $("#seckillTip").html("秒杀进行中");
 
         } else {
             $("#buyButton").attr("disabled", true);
             $("#seckillTip").html("秒杀已结束");
+            $("#captchaImg").hide();
+            $("#captcha").hide();
         }
 
 

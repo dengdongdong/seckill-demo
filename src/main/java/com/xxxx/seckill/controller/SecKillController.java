@@ -1,6 +1,11 @@
 package com.xxxx.seckill.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.wf.captcha.ArithmeticCaptcha;
+import com.wf.captcha.SpecCaptcha;
+import com.wf.captcha.base.Captcha;
+import com.wf.captcha.utils.CaptchaUtil;
+import com.xxxx.seckill.exception.GlobalException;
 import com.xxxx.seckill.pojo.Order;
 import com.xxxx.seckill.pojo.SeckillOrder;
 import com.xxxx.seckill.pojo.User;
@@ -14,6 +19,7 @@ import com.xxxx.seckill.vo.GoodsVo;
 import com.xxxx.seckill.vo.RespBean;
 import com.xxxx.seckill.vo.RespBeanEnum;
 import com.xxxx.seckill.vo.SeckillMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
@@ -28,12 +34,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
+import java.io.IOException;
 import java.sql.SQLOutput;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Author: asus
@@ -41,6 +52,7 @@ import java.util.Objects;
  */
 @Controller
 @RequestMapping("/secKill")
+@Slf4j
 public class SecKillController implements InitializingBean {
     @Autowired
     private IGoodsService goodsService;
@@ -200,6 +212,53 @@ public class SecKillController implements InitializingBean {
 
     }
 
+    /**
+     * 生成验证码
+     *
+     * @param user
+     * @param goodsId
+     * @param request
+     * @param response
+     * @throws Exception
+     */
+    @RequestMapping(value = "/captcha", method = RequestMethod.GET)
+    public void captcha(User user, Long goodsId, HttpServletRequest request, HttpServletResponse response) {
+        if (Objects.isNull(user) || goodsId < 0) {
+            throw new GlobalException(RespBeanEnum.REQUEST_ILLEGAL);
+        }
+        // 设置请求头为输出图片类型
+        response.setContentType("image/jpg");
+        response.setHeader("Pragma", "No-cache");
+        response.setHeader("Cache-Control", "no-cache");//不缓存
+        response.setDateHeader("Expires", 0);//不失效
+
+        // // 三个参数分别为宽、高、位数
+        // SpecCaptcha specCaptcha = new SpecCaptcha(130, 48, 5);
+        // // 设置字体
+        // specCaptcha.setFont(new Font("Verdana", Font.PLAIN, 32));  // 有默认字体，可以不用设置
+        // // 设置类型，纯数字、纯字母、字母数字混合
+        // specCaptcha.setCharType(Captcha.TYPE_ONLY_NUMBER);
+        //
+        // // 验证码存入session
+        // request.getSession().setAttribute("captcha", specCaptcha.text().toLowerCase());
+        //
+        // // 输出图片流
+        // specCaptcha.out(response.getOutputStream());
+
+
+        // 算术类型
+        ArithmeticCaptcha captcha = new ArithmeticCaptcha(130, 32, 3);
+        // captcha.setLen(3);  // 几位数运算，默认是两位
+        // captcha.getArithmeticString();  // 获取运算的公式：3+2=?
+        // captcha.text();  // 获取运算的结果：5
+        redisTemplate.opsForValue().set("captcha:" + user.getId() + ":" + goodsId, captcha.text(), 300, TimeUnit.SECONDS);
+
+        try {
+            captcha.out(response.getOutputStream());
+        } catch (IOException e) {
+            log.error("验证码生成失败：", e.getMessage());
+        }
+    }
 
     /**
      * desc:把商品库存数量加载到redis中
