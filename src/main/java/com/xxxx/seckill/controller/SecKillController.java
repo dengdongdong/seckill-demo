@@ -23,6 +23,7 @@ import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -105,14 +106,18 @@ public class SecKillController implements InitializingBean {
      * @param goodsId
      * @return
      */
-    @RequestMapping(value = "/doSecKill", method = RequestMethod.POST)
+    @RequestMapping(value = "/{path}/doSecKill", method = RequestMethod.POST)
     @ResponseBody
-    public RespBean doSecKill(Model model, User user, Long goodsId) {
+    public RespBean doSecKill(Model model, User user, Long goodsId, @PathVariable String path) {
         if (Objects.isNull(user)) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
-        // 下单实现异步处理//判断是否重复抢购
         ValueOperations valueOperations = redisTemplate.opsForValue();
+        boolean check = orderService.checkPath(user, goodsId, path);
+        if (!check) {
+            RespBean.error(RespBeanEnum.REQUEST_ILLEGAL);
+        }
+        // 下单实现异步处理//判断是否重复抢购
         SeckillOrder seckillOrder = (SeckillOrder) redisTemplate.opsForValue().get("order:" + user.getId() + ":" + goodsId);
         if (Objects.nonNull(seckillOrder)) {
             return RespBean.error(RespBeanEnum.REPEATE_ERROR);
@@ -166,7 +171,7 @@ public class SecKillController implements InitializingBean {
     }
 
     /**
-     * desc:
+     * desc:获取秒杀结果
      *
      * @param user
      * @param goodsId
@@ -179,6 +184,22 @@ public class SecKillController implements InitializingBean {
         Long orderId = seckillOrderService.getResult(user, goodsId);
         return RespBean.success(orderId);
     }
+
+    /**
+     * 获取秒杀地址
+     *
+     * @return seckillPath 秒杀地址
+     */
+    @RequestMapping(value = "/path", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean getSeckillPath(User user, Long goodsId) {
+        Assert.notNull(user, RespBeanEnum.SESSION_ERROR);
+        //秒杀地址和用户、商品保持唯一(生成秒杀地址)
+        String seckillPath = orderService.createSeckillPath(user, goodsId);
+        return RespBean.success(seckillPath);
+
+    }
+
 
     /**
      * desc:把商品库存数量加载到redis中
