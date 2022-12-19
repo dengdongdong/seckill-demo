@@ -100,12 +100,14 @@
     //获取秒杀路径
     function getSeckillPath() {
         let goodsId = $("#goodsId").val();
+        let captcha = $("#captcha").val();
         g_showLoading();//加载进度条
         $.ajax({
             url: "/secKill/path",
             type: "GET",
             data: {
                 goodsId: goodsId,
+                captcha: captcha,
             },
             success: function (data) {
                 if (data.code == 200) {
@@ -146,6 +148,7 @@
         });
     }
 
+    //获取秒杀结果
     function getResult(goodsId) {
         g_showLoading();
         $.ajax({

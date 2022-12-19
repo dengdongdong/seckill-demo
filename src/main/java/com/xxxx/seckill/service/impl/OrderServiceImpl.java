@@ -18,6 +18,7 @@ import com.xxxx.seckill.utils.UUIDUtil;
 import com.xxxx.seckill.vo.GoodsVo;
 import com.xxxx.seckill.vo.OrderDetailVo;
 import com.xxxx.seckill.vo.RespBeanEnum;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -136,5 +137,23 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
         String redisPath = (String) redisTemplate.opsForValue().get("seckillPath:" + user.getId() + ":" + goodsId);
         return path.equals(redisPath);
+    }
+
+    /**
+     * 校验验证码
+     *
+     * @param user
+     * @param goodsId
+     * @param captcha
+     * @return
+     */
+    @Override
+    public boolean checkCaptcha(User user, Long goodsId, String captcha) {
+        if (StringUtils.isBlank(captcha) || Objects.isNull(user) || goodsId < 0) {
+            return false;
+        }
+        String redisCaptcha = (String) redisTemplate.opsForValue().get("captcha:" + user.getId() + ":" + goodsId);
+
+        return captcha.equals(redisCaptcha);
     }
 }

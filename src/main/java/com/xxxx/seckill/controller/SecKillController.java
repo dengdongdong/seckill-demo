@@ -204,8 +204,14 @@ public class SecKillController implements InitializingBean {
      */
     @RequestMapping(value = "/path", method = RequestMethod.GET)
     @ResponseBody
-    public RespBean getSeckillPath(User user, Long goodsId) {
+    public RespBean getSeckillPath(User user, Long goodsId, String captcha) {
         Assert.notNull(user, RespBeanEnum.SESSION_ERROR);
+        //验证码校验
+        boolean checkCaptcha = orderService.checkCaptcha(user, goodsId, captcha);
+        if (!checkCaptcha) {
+            return RespBean.error(RespBeanEnum.ERROR_CAPTCHA);
+
+        }
         //秒杀地址和用户、商品保持唯一(生成秒杀地址)
         String seckillPath = orderService.createSeckillPath(user, goodsId);
         return RespBean.success(seckillPath);
@@ -231,21 +237,6 @@ public class SecKillController implements InitializingBean {
         response.setHeader("Pragma", "No-cache");
         response.setHeader("Cache-Control", "no-cache");//不缓存
         response.setDateHeader("Expires", 0);//不失效
-
-        // // 三个参数分别为宽、高、位数
-        // SpecCaptcha specCaptcha = new SpecCaptcha(130, 48, 5);
-        // // 设置字体
-        // specCaptcha.setFont(new Font("Verdana", Font.PLAIN, 32));  // 有默认字体，可以不用设置
-        // // 设置类型，纯数字、纯字母、字母数字混合
-        // specCaptcha.setCharType(Captcha.TYPE_ONLY_NUMBER);
-        //
-        // // 验证码存入session
-        // request.getSession().setAttribute("captcha", specCaptcha.text().toLowerCase());
-        //
-        // // 输出图片流
-        // specCaptcha.out(response.getOutputStream());
-
-
         // 算术类型
         ArithmeticCaptcha captcha = new ArithmeticCaptcha(130, 32, 3);
         // captcha.setLen(3);  // 几位数运算，默认是两位

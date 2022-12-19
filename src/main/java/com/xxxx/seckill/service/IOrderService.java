@@ -31,4 +31,6 @@ public interface IOrderService extends IService<Order> {
      * @return
      */
     boolean checkPath(User user, Long goodsId, String path);
+
+    boolean checkCaptcha(User user, Long goodsId, String captcha);
 }
