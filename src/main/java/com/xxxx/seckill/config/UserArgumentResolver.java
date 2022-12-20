@@ -26,10 +26,12 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
     private IUserService userService;
 
     //条件判断:返回true则执行下边的方法，返回false则不执行
+
     /**
      * 该方法用于判断Controller中方法参数中是否有符合条件的参数：
-     *                          有则进入下一个方法resolveArgument；
-     *                          没有则跳过不做处理
+     * 有则进入下一个方法resolveArgument；
+     * 没有则跳过不做处理
+     *
      * @param parameter
      * @return
      */
@@ -40,8 +42,10 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
         // 如果参数类型有为User类的则符合,进入resolveArgument方法
         return User.class == clazz;
     }
+
     /**
      * 该方法在上一个方法同通过之后调用：在这里可以进行处理，根据情况返回对象——返回的对象将被赋值到Controller的方法的参数中
+     *
      * @param parameter
      * @param mavContainer
      * @param webRequest
@@ -52,16 +56,6 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-        //获取request
-        HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
-        HttpServletResponse response = webRequest.getNativeResponse(HttpServletResponse.class);
-        String userTicket = CookieUtil.getCookieValue(request, "userTicket");
-        if (StringUtils.isBlank(userTicket)) {
-            return null;
-        }
-        User user = userService.getUserByCookie(userTicket, request, response);
-
-
-        return user;
+        return UserContext.getUser();
     }
 }

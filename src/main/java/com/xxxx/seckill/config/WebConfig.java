@@ -1,10 +1,12 @@
 package com.xxxx.seckill.config;
 
+import com.xxxx.seckill.vo.RespBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -20,9 +22,11 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Autowired
     private UserArgumentResolver userArgumentResolver;
+    @Autowired
+    private AccessLimitInterceptor accessLimitInterceptor;
 
     /**
-     * 自定义参数解析器
+     * 注册自定义参数解析器
      * 该方法作用在调用Controller方法的参数传入之前
      */
 
@@ -33,12 +37,22 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     /**
-     * 静态资源处理器
+     * 注册静态资源处理器
      *
      * @param registry
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
+    }
+
+    /**
+     * 注册拦截器
+     *
+     * @param registry
+     */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(accessLimitInterceptor);
     }
 }

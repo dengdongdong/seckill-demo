@@ -2,6 +2,10 @@ package com.xxxx.seckill.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.wf.captcha.ArithmeticCaptcha;
+import com.wf.captcha.SpecCaptcha;
+import com.wf.captcha.base.Captcha;
+import com.wf.captcha.utils.CaptchaUtil;
+import com.xxxx.seckill.config.AccessLimit;
 import com.xxxx.seckill.exception.GlobalException;
 import com.xxxx.seckill.pojo.Order;
 import com.xxxx.seckill.pojo.SeckillOrder;
@@ -19,6 +23,7 @@ import com.xxxx.seckill.vo.SeckillMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.script.RedisScript;
@@ -32,12 +37,15 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
 import java.io.IOException;
+import java.sql.SQLOutput;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -200,27 +208,11 @@ public class SecKillController implements InitializingBean {
      * @param request
      * @return
      */
+    @AccessLimit(second = 5, maxCount = 5, needLogin = true)//使用注解进行限流
     @RequestMapping(value = "/path", method = RequestMethod.GET)
     @ResponseBody
     public RespBean getSeckillPath(User user, Long goodsId, String captcha, HttpServletRequest request) {
         Assert.notNull(user, RespBeanEnum.SESSION_ERROR);
-
-        //接口限流
-        ValueOperations valueOperations = redisTemplate.opsForValue();
-        //限制访问次数，五秒之内访问5次
-        String requestURI = request.getRequestURI();
-        //方便测试
-        captcha = "0";
-        Integer count = (Integer) valueOperations.get(requestURI + ":" + user.getId());
-        if (count == null) {
-            valueOperations.set(requestURI + ":" + user.getId(), 1, 5, TimeUnit.SECONDS);
-
-        } else if (count < 5) {
-            //自增
-            valueOperations.increment(requestURI + ":" + user.getId(), 1);
-        } else {
-            return RespBean.error(RespBeanEnum.ACCESS_LIMIT_REAHCED);
-        }
 
         //验证码校验
         boolean checkCaptcha = orderService.checkCaptcha(user, goodsId, captcha);
